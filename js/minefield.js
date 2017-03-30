@@ -9,6 +9,7 @@ function Minefield(cols, rows, mines) {
     // build the field
     this.build();
     
+    // sort the mines, but check if there is a possible way to get to the end
     var possibleWay = [];
     do {
         this.removeMines();
@@ -17,13 +18,26 @@ function Minefield(cols, rows, mines) {
         possibleWay = astar.search(graph, graph.grid[0][0], graph.grid[cols-1][rows-1]);
     }
     while (possibleWay.length == 0);
+    
+    /*
     console.log(possibleWay);
     for (var i = 0; i < possibleWay.length; i++) {
         var node = possibleWay[i];
         setTimeout(function(floor){floor.tint = 0xffffff}, 50*i, this.tiles[node.x][node.y].floor);
     }
+    */
 }
 Minefield.prototype = Object.create(Phaser.Group.prototype);
+
+Minefield.prototype.addOnTile = function(child, col, row) {
+    child.x = 50 * col + 25;
+    child.y = 50 * row + 25;
+    this.add(child);
+}
+
+Minefield.prototype.getTile = function(col, row) {
+    return this.tiles[col][row];
+}
 
 Minefield.prototype.build = function() {
     // builds an array, each item being a tile object
@@ -32,9 +46,8 @@ Minefield.prototype.build = function() {
         for (var row = 0; row < this.rows; row++) {    
             var tile = new Tile(col, row);
             tile.size = 50;
-            tile.position = new Phaser.Point(50 * col + 25, 50 * row + 25);
             this.tiles[col][row] = tile;
-            this.add(this.tiles[col][row]);
+            this.addOnTile(this.tiles[col][row], col, row);
         }
     }
 }

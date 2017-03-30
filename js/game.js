@@ -54,39 +54,21 @@ TheGame.prototype = {
     // function to create a level
     createLevel: function () {
 
-        var minefield = new Minefield(this.cols, this.rows, 30);
-        minefield.x = (game.width - gameOptions.tileSize * this.cols) / 2;
-        minefield.y = (game.height -  gameOptions.tileSize * this.rows) / 2;
-        //minefield.takeTurn(0,0);
+        this.minefield = new Minefield(this.cols, this.rows, 30);
+        this.minefield.x = (game.width - gameOptions.tileSize * this.cols) / 2;
+        this.minefield.y = (game.height -  gameOptions.tileSize * this.rows) / 2;
+        this.minefield.takeTurn(0,0);
         
         // add player
-        /*
-        this.playerPosition = new Phaser.Point(0, 5);
-        var tilePos = this.getTilePosition(this.playerPosition.x, this.playerPosition.y);
-        this.player = game.add.sprite(tilePos.x, tilePos.y, 'tiles');
+        this.player = game.add.sprite(0, 0, 'tiles');
+        this.player.col = 0;
+        this.player.row = 0;
         this.player.width = gameOptions.tileSize;
         this.player.height = gameOptions.tileSize;
         this.player.frame = 65;
         this.player.anchor.set(0.5);
-        this.tileGroup.add(this.player);
-        */
+        this.minefield.addOnTile(this.player, 0, 0);
 	},
-    
-    // return tile position
-    getTilePosition: function (row, col) {
-        return {
-            x: col * gameOptions.tileSize + gameOptions.tileSize / 2,
-            y: row * gameOptions.tileSize + gameOptions.tileSize / 2
-        };
-    },
-    
-    // return a tile
-    getTile: function (row, col) {
-        if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) {
-            return null;
-        }
-        return this.tilesArray[row][col];
-    },
 
     // start checking for swipes
     beginSwipe: function (event) {
@@ -118,30 +100,48 @@ TheGame.prototype = {
     
     // move player to up
     moveUp: function () {
-        this.handleMovement(new Phaser.Point(0, -1));
+        if (this.player.row > 0) {
+            this.handleMovement(new Phaser.Point(0, -1));
+        }
         this.player.frame = 68;
     },
     
     // move player to down
     moveDown: function () {
-        this.handleMovement(new Phaser.Point(0, 1));
+        if (this.player.row < this.rows - 1) {
+            this.handleMovement(new Phaser.Point(0, 1));
+        }
         this.player.frame = 65;
     },
     
     // move player to left
     moveLeft: function () {
-        this.handleMovement(new Phaser.Point(-1, 0));
+        if (this.player.col > 0) {
+            this.handleMovement(new Phaser.Point(-1, 0));
+        }
         this.player.frame = 94;
     },
     
     // move player to right
     moveRight: function () {
-        this.handleMovement(new Phaser.Point(1, 0));
+        if (this.player.col < this.cols - 1) {
+            this.handleMovement(new Phaser.Point(1, 0));
+        }
         this.player.frame = 91;
     },
 
     // handling swipes
     handleMovement: function (position) {
+        
+        this.player.col += position.x;
+        this.player.row += position.y;
+        
+        this.minefield.takeTurn(this.player.col,this.player.row)
+        
+        var playerTween = game.add.tween(this.player).to({
+            x: this.player.col * gameOptions.tileSize + gameOptions.tileSize / 2,
+            y: this.player.row * gameOptions.tileSize + gameOptions.tileSize / 2
+        }, 100, Phaser.Easing.Linear.None, true);
     },
 
     // routine to start when the level is failed

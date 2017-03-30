@@ -14,7 +14,7 @@ function Tile(col, row) {
     
     // add the floor sprite
     this.floor = new Phaser.Sprite(game, 0, 0, 'tiles');
-    this.floor.frame = 102;
+    this.floor.frame = 90;
     this.floor.anchor.set(0.5, 0.5);
     this.floor.tint = 0xaaaaaa;
     this.add(this.floor);
@@ -39,7 +39,7 @@ Object.defineProperty(Tile.prototype, 'mine', {
     get: function() { return this._mine; },
     set: function(value) {
         this._mine = value;
-        this.floor.tint = value ? 0xff0000 : 0xaaaaaa;
+        //this.floor.tint = value ? 0xff0000 : 0xaaaaaa;
     }
 });
 
