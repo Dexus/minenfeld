@@ -4,12 +4,12 @@ function Tile(col, row) {
     this.col = col;
     this.row = row;
     
-    this._mine = false;
+    this.mine = false;
     this._adjacents = -1;
     this.neighbors = [
-        {'col':col-1, 'row':row-1}, {'col':col-1, 'row':row}, {'col':col-1, 'row':row+1},
-        {'col':col+1, 'row':row-1}, {'col':col+1, 'row':row}, {'col':col+1, 'row':row+1},
-        {'col':col,   'row':row-1}, {'col':col,   'row':row+1}
+        {col:col-1, row:row-1}, {col:col-1, row:row}, {col:col-1, row:row+1},
+        {col:col+1, row:row-1}, {col:col+1, row:row}, {col:col+1, row:row+1},
+        {col:col,   row:row-1}, {col:col,   row:row+1}
     ];
     
     // add the floor sprite
@@ -28,18 +28,31 @@ function Tile(col, row) {
 }
 Tile.prototype = Object.create(Phaser.Group.prototype);
 
+Tile.prototype.isNeighbor = function(col, row) {
+    if (this.col == col && this.row == row) {
+        return true;
+    }
+    for (var i = 0; i < this.neighbors.length; i++) {
+        if (this.neighbors[i].col == col && this.neighbors[i].row == row) {
+            return true;
+        }
+    }
+    return false;
+}
+
+Tile.prototype.show = function(col, row) {
+    if (this.mine) {
+        var mine = new Phaser.Sprite(game, 0, 0, 'tiles');
+        mine.frame = 38;
+        mine.anchor.set(0.5, 0.5);
+        this.add(mine);
+    }
+}
+
 Object.defineProperty(Tile.prototype, 'size', {
     set: function(value) {
         this.width = value;
         this.height = value;
-    }
-});
-
-Object.defineProperty(Tile.prototype, 'mine', {
-    get: function() { return this._mine; },
-    set: function(value) {
-        this._mine = value;
-        //this.floor.tint = value ? 0xff0000 : 0xaaaaaa;
     }
 });
 
@@ -48,8 +61,8 @@ Object.defineProperty(Tile.prototype, 'adjacents', {
     set: function(value) {
         this._adjacents = value;
         this.label.text = value;
+        this.label.visible = value > 0;
         if (value > -1) {
-            this.label.visible = true;
             this.floor.tint = 0xffffff;
         }
     }

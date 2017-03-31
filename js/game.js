@@ -40,6 +40,7 @@ TheGame.prototype = {
         this.createLevel();
         
         // define inputs (touch and keyboard)
+        
         game.input.onDown.add(this.beginSwipe, this);
         var keyUp = game.input.keyboard.addKey(Phaser.Keyboard.UP);
         keyUp.onDown.add(this.moveUp, this);
@@ -54,20 +55,27 @@ TheGame.prototype = {
     // function to create a level
     createLevel: function () {
 
-        this.minefield = new Minefield(this.cols, this.rows, 30);
+        // start and end point
+        var pStart = {col:0, row:0};
+        var pEnd = {col:this.cols-1, row:this.rows-1};
+        
+        // build minefield
+        this.minefield = new Minefield(this.cols, this.rows, 50, pStart, pEnd);
         this.minefield.x = (game.width - gameOptions.tileSize * this.cols) / 2;
         this.minefield.y = (game.height -  gameOptions.tileSize * this.rows) / 2;
-        this.minefield.takeTurn(0,0);
         
         // add player
         this.player = game.add.sprite(0, 0, 'tiles');
-        this.player.col = 0;
-        this.player.row = 0;
+        this.player.col = pStart.col;
+        this.player.row = pStart.row;
         this.player.width = gameOptions.tileSize;
         this.player.height = gameOptions.tileSize;
         this.player.frame = 65;
         this.player.anchor.set(0.5);
-        this.minefield.addOnTile(this.player, 0, 0);
+        this.minefield.addOnTile(this.player, this.player.col, this.player.row);
+        
+        // take the first turn
+        this.minefield.takeTurn(this.player.col, this.player.row);
 	},
 
     // start checking for swipes
@@ -132,25 +140,32 @@ TheGame.prototype = {
 
     // handling swipes
     handleMovement: function (position) {
-        
+        // update position
         this.player.col += position.x;
         this.player.row += position.y;
         
-        this.minefield.takeTurn(this.player.col,this.player.row)
+        // take an action in current tile
+        this.minefield.takeTurn(this.player.col,this.player.row);
+        if (this.minefield.exploded) this.levelRestart()
         
+        // move player
         var playerTween = game.add.tween(this.player).to({
             x: this.player.col * gameOptions.tileSize + gameOptions.tileSize / 2,
             y: this.player.row * gameOptions.tileSize + gameOptions.tileSize / 2
         }, 100, Phaser.Easing.Linear.None, true);
+        
+        playerTween.onComplete.add(function(){
+            game.input.onDown.add(this.beginSwipe, this);
+        }, this);
     },
 
     // routine to start when the level is failed
     levelRestart: function () { 
         var tween = game.add.tween(this.player).to({
             alpha: 0,
-            width: gameOptions.tileSize / 4,
-            height: gameOptions.tileSize / 4
-        }, 500, Phaser.Easing.Linear.None, true);
+            width: gameOptions.tileSize * 2,
+            height: gameOptions.tileSize * 2
+        }, 1000, Phaser.Easing.Linear.None, true);
         tween.onComplete.add(function() {
             game.state.start('TheGame');
         }, this);

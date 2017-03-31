@@ -1,6 +1,7 @@
-function Minefield(cols, rows, mines) {
+function Minefield(cols, rows, mines, start, goal) {
     Phaser.Group.call(this, game);
     
+    // variables
     this.cols = cols;
     this.rows = rows;
     this.mines = mines;
@@ -9,13 +10,19 @@ function Minefield(cols, rows, mines) {
     // build the field
     this.build();
     
+    // define start and goal tile
+    this.start = this.tiles[start.col][start.row];
+    this.start.floor.frame = 89;
+    this.goal = this.tiles[goal.col][goal.row];
+    this.goal.floor.frame = 89;
+    
     // sort the mines, but check if there is a possible way to get to the end
     var possibleWay = [];
     do {
         this.removeMines();
         this.sortMines();
         var graph = new Graph(this.getGraph());
-        possibleWay = astar.search(graph, graph.grid[0][0], graph.grid[cols-1][rows-1]);
+        possibleWay = astar.search(graph, graph.grid[start.col][start.row], graph.grid[goal.col][goal.row]);
     }
     while (possibleWay.length == 0);
     
@@ -29,18 +36,15 @@ function Minefield(cols, rows, mines) {
 }
 Minefield.prototype = Object.create(Phaser.Group.prototype);
 
+// add a child in the minefield
 Minefield.prototype.addOnTile = function(child, col, row) {
     child.x = 50 * col + 25;
     child.y = 50 * row + 25;
     this.add(child);
 }
 
-Minefield.prototype.getTile = function(col, row) {
-    return this.tiles[col][row];
-}
-
+// builds an array, each item being a tile object
 Minefield.prototype.build = function() {
-    // builds an array, each item being a tile object
     for (var col = 0; col < this.cols; col++) {
         this.tiles[col] = [];
         for (var row = 0; row < this.rows; row++) {    
@@ -52,6 +56,33 @@ Minefield.prototype.build = function() {
     }
 }
 
+// sort the mines in the minefield
+Minefield.prototype.sortMines = function() {
+    // get available tiles
+    var available = [];
+    for (var col = 0; col < this.cols; col++) {
+        for (var row = 0; row < this.rows; row++) {
+            if (!this.start.isNeighbor(col, row) && !this.goal.isNeighbor(col, row)) {
+                available.push(this.tiles[col][row]);
+            }
+        }
+    }
+    
+    // shuffle
+    for (var i = available.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = available[i];
+        available[i] = available[j];
+        available[j] = temp;
+    }
+    
+    // set mine
+    for (var i = 0; i < this.mines; i++) {
+        available[i].mine = true;
+    }
+}
+
+// remove all mines from the minefield
 Minefield.prototype.removeMines = function() {
     for (var col = 0; col < this.cols; col++) {
         for (var row = 0; row < this.rows; row++) {
@@ -60,45 +91,13 @@ Minefield.prototype.removeMines = function() {
     }
 }
 
-Minefield.prototype.sortMines = function() {
-    // sort the mines
-    var col, row;
-    for (var i = 0; i < this.mines; i++) {
-        do {
-            col = Math.floor(Math.random() * this.cols);
-            row = Math.floor(Math.random() * this.rows);
-        }
-        while (this.tiles[col][row].mine || (col == 0 && row == 0) || (col == this.cols-1 && row == this.rows-1));
-        this.tiles[col][row].mine = true;
-    }
-    /*
-    this.tiles[2][1].mine = true;
-    this.tiles[2][1].floor.tint = 0xff0000;
-    
-    this.tiles[1][3].mine = true;
-    this.tiles[1][3].floor.tint = 0xff0000;
-    
-    this.tiles[3][3].mine = true;
-    this.tiles[3][3].floor.tint = 0xff0000;
-    
-    this.tiles[3][4].mine = true;
-    this.tiles[3][4].floor.tint = 0xff0000;
-    
-    this.tiles[10][4].mine = true;
-    this.tiles[10][4].floor.tint = 0xff0000;
-    
-    this.tiles[8][5].mine = true;
-    this.tiles[8][5].floor.tint = 0xff0000;
-    */
-}
-
+// returns true if column and row are inside of minefield bounds
 Minefield.prototype.inBounds = function(col, row) {
-    // true if column and row are inside of minefield bounds
     return row >= 0 && row < this.rows && col >=0 && col < this.cols;
 }
-    
+
+// look the adjacent tiles and returns the amount of mines around
 Minefield.prototype.minesAround = function(col, row) {
-    // look the adjacent tiles and returns the amount of mines around
     var total = 0
     var tile = this.tiles[col][row]
     for (var i = 0; i < tile.neighbors.length; i++) {
@@ -111,8 +110,8 @@ Minefield.prototype.minesAround = function(col, row) {
     return total;
 }
 
+// take some action in a tile
 Minefield.prototype.takeTurn = function(col, row, action='g') {
-    // take some action in a tile
     if (!this.inBounds(col, row)) return;
     
     // get the tile
@@ -126,7 +125,7 @@ Minefield.prototype.takeTurn = function(col, row, action='g') {
 
     // if the tile has a mine, explode
     if (tile.mine) {
-        this.exploded = true;
+        this.blowUp();
         return;
     }
 
@@ -141,12 +140,23 @@ Minefield.prototype.takeTurn = function(col, row, action='g') {
             for (var i = 0; i < tile.neighbors.length; i++) {
                 var neighbor = tile.neighbors[i];
                 //this.takeTurn(neighbor.col, neighbor.row, 'g');
-                setTimeout(this.takeTurn.bind(this), 100, neighbor.col, neighbor.row);
+                setTimeout(this.takeTurn.bind(this), 50 * i, neighbor.col, neighbor.row);
             }
         }
     }
 }
 
+// reveals everything
+Minefield.prototype.blowUp = function() {
+    this.exploded = true;
+    for (var col = 0; col < this.cols; col++) {
+        for (var row = 0; row < this.rows; row++) {
+            this.tiles[col][row].show();
+        }
+    }
+}
+
+// convert the minefield to a bidimisional array with 0 ('wall') or 1 ('walkable')
 Minefield.prototype.getGraph = function() {
     var graph = [];
     for (var col = 0; col < this.cols; col++) {
