@@ -9,9 +9,9 @@ In the original Minesweeper the objective of the game is to clear a rectangular 
 
 ## Credits
 
-+ [@photonstorm](https://github.com/photonstorm/) for creating
-  [phaser](https://github.com/photonstorm/phaser).
-+ [Keney.nl](http://kenney.nl/assets/sokoban) for the default game's images
++ [PhotonStorm](https://github.com/photonstorm/) for creating
+  [Phaser](https://github.com/photonstorm/phaser).
++ [Kenney](http://kenney.nl/assets/sokoban) for the default game's images.
 
 ## License
 Copyright (c) 2017 Maicon Feldhaus
