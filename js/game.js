@@ -21,7 +21,7 @@ var TheGame = function () {};
 
 TheGame.prototype = {
     
-    rows: 15,
+    rows: 14,
     cols: 11,
 
     // preloading assets
@@ -39,8 +39,11 @@ TheGame.prototype = {
         // create level
         this.createLevel();
         
-        // define inputs (touch and keyboard)
+        // hud
+        var style = { font: '24px Arial', fill: '#ffffff', align: 'center' };
+        this.hud = game.add.text(this.minefield.x, this.minefield.y + this.minefield.height, 'Diagonal: 0 / Straight: 0', style);
         
+        // define inputs (touch and keyboard)
         game.input.onDown.add(this.beginSwipe, this);
         var keyUp = game.input.keyboard.addKey(Phaser.Keyboard.UP);
         keyUp.onDown.add(this.moveUp, this);
@@ -54,15 +57,14 @@ TheGame.prototype = {
 
     // function to create a level
     createLevel: function () {
-
         // start and end point
         var pStart = {col:0, row:0};
         var pEnd = {col:this.cols-1, row:this.rows-1};
         
         // build minefield
-        this.minefield = new Minefield(this.cols, this.rows, 50, pStart, pEnd);
-        this.minefield.x = (game.width - gameOptions.tileSize * this.cols) / 2;
-        this.minefield.y = (game.height -  gameOptions.tileSize * this.rows) / 2;
+        this.minefield = new Minefield(this.cols, this.rows, gameOptions.tileSize, 50, pStart, pEnd);
+        this.minefield.x = (game.width - this.minefield.width) / 2;
+        this.minefield.y = (game.height - this.minefield.height) / 2;
         
         // add player
         this.player = game.add.sprite(0, 0, 'tiles');
@@ -103,6 +105,12 @@ TheGame.prototype = {
             }
         } else {
             game.input.onDown.add(this.beginSwipe, this);
+            if (swipeMagnitude < 20) {
+                var col = Math.floor((game.input.x - this.minefield.x) / gameOptions.tileSize);
+                var row = Math.floor((game.input.y - this.minefield.y) / gameOptions.tileSize);
+                this.minefield.tiles[col][row].flag = !this.minefield.tiles[col][row].flag;
+                    //this.minefield.tiles[col][row].floor.tint = 0xff4400;
+            }
         }
     },
     
@@ -144,9 +152,13 @@ TheGame.prototype = {
         this.player.col += position.x;
         this.player.row += position.y;
         
+        // update hud
+        this.hud.text = 'Diagonal: ' + this.minefield.minesDiagonal(this.player.col, this.player.row);
+        this.hud.text += ' / Straight: ' + this.minefield.minesStraight(this.player.col, this.player.row);
+        
         // take an action in current tile
         this.minefield.takeTurn(this.player.col,this.player.row);
-        if (this.minefield.exploded) this.levelRestart()
+        if (this.minefield.exploded)  { this.levelRestart(); }
         
         // move player
         var playerTween = game.add.tween(this.player).to({

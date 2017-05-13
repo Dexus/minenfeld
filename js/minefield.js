@@ -1,9 +1,10 @@
-function Minefield(cols, rows, mines, start, goal) {
+function Minefield(cols, rows, size, mines, start, goal) {
     Phaser.Group.call(this, game);
     
     // variables
     this.cols = cols;
     this.rows = rows;
+    this.size = size;
     this.mines = mines;
     this.tiles = [];
     
@@ -36,10 +37,10 @@ function Minefield(cols, rows, mines, start, goal) {
 }
 Minefield.prototype = Object.create(Phaser.Group.prototype);
 
-// add a child in the minefield
+// adds a child in the minefield
 Minefield.prototype.addOnTile = function(child, col, row) {
-    child.x = 50 * col + 25;
-    child.y = 50 * row + 25;
+    child.x = this.size * col + this.size / 2;
+    child.y = this.size * row + this.size / 2;
     this.add(child);
 }
 
@@ -49,7 +50,7 @@ Minefield.prototype.build = function() {
         this.tiles[col] = [];
         for (var row = 0; row < this.rows; row++) {    
             var tile = new Tile(col, row);
-            tile.size = 50;
+            tile.size = this.size;
             this.tiles[col][row] = tile;
             this.addOnTile(this.tiles[col][row], col, row);
         }
@@ -82,7 +83,7 @@ Minefield.prototype.sortMines = function() {
     }
 }
 
-// remove all mines from the minefield
+// removes all mines from the minefield
 Minefield.prototype.removeMines = function() {
     for (var col = 0; col < this.cols; col++) {
         for (var row = 0; row < this.rows; row++) {
@@ -97,17 +98,36 @@ Minefield.prototype.inBounds = function(col, row) {
 }
 
 // look the adjacent tiles and returns the amount of mines around
-Minefield.prototype.minesAround = function(col, row) {
+Minefield.prototype.minesAround = function(col, row, neighbors) {
+    // get neighbours
+    if (neighbors === 'diagonal') {
+        neighbors = this.tiles[col][row].diagonal;
+    } else if (neighbors === 'straight') {
+        neighbors = this.tiles[col][row].straight;
+    } else {
+        neighbors = this.tiles[col][row].neighbors;
+    }    
+    
+    // count
     var total = 0
-    var tile = this.tiles[col][row]
-    for (var i = 0; i < tile.neighbors.length; i++) {
-        var neighbor = tile.neighbors[i];
+    for (var i = 0; i < neighbors.length; i++) {
+        var neighbor = neighbors[i];
         if (this.inBounds(neighbor.col, neighbor.row) && this.tiles[neighbor.col][neighbor.row].mine) {
             total += 1
         }
     }
 
     return total;
+}
+
+// returns the amount of diagonal mines
+Minefield.prototype.minesDiagonal = function(col, row) {
+    return this.minesAround(col, row, 'diagonal');
+}
+
+// returns the amount of straight mines
+Minefield.prototype.minesStraight = function(col, row) {
+    return this.minesAround(col, row, 'straight');
 }
 
 // take some action in a tile

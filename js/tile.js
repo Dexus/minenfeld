@@ -1,16 +1,25 @@
 function Tile(col, row) {
     Phaser.Group.call(this, game);
     
+    // store column and row
     this.col = col;
     this.row = row;
     
+    // there is a mine in the tile and mines adjacents
     this.mine = false;
     this._adjacents = -1;
-    this.neighbors = [
-        {col:col-1, row:row-1}, {col:col-1, row:row}, {col:col-1, row:row+1},
-        {col:col+1, row:row-1}, {col:col+1, row:row}, {col:col+1, row:row+1},
-        {col:col,   row:row-1}, {col:col,   row:row+1}
+    this._flag = false;
+
+    // get all neighbors
+    this.diagonal = [
+        {col:col-1, row:row-1}, {col:col-1, row:row+1},
+        {col:col+1, row:row-1}, {col:col+1, row:row+1}
     ];
+    this.straight = [
+        {col:col-1, row:row}, {col:col, row:row-1},
+        {col:col+1, row:row}, {col:col, row:row+1}
+    ];
+    this.neighbors = [].concat(this.diagonal, this.straight);
     
     // add the floor sprite
     this.floor = new Phaser.Sprite(game, 0, 0, 'tiles');
@@ -53,6 +62,16 @@ Object.defineProperty(Tile.prototype, 'size', {
     set: function(value) {
         this.width = value;
         this.height = value;
+    }
+});
+
+Object.defineProperty(Tile.prototype, 'flag', {
+    get: function() { return this._flag; },
+    set: function(value) {
+        if (this._adjacents === -1) {
+        this._flag = value;
+        this.floor.tint = value ? 0xff4400 : 0xaaaaaa;
+        }
     }
 });
 

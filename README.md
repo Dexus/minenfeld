@@ -6,6 +6,7 @@ In the original Minesweeper the objective of the game is to clear a rectangular 
 
 ## Controls
 + Arrows or Swipe: to move character in each direction;
++ Click or Tap: to set a 'flag' (just change the color of tile).
 
 ## Credits
 
